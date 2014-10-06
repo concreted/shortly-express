@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -22,25 +23,31 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({secret: 'nyancat'}));
 
-app.get('/', 
+app.get('/', util.checkUser,
 function(req, res) {
-  res.render('index');
+  res.render('index')
 });
 
-app.get('/create', 
+app.get('/login',
 function(req, res) {
-  res.render('index');
+  res.render('login');
+})
+
+app.get('/create', util.checkUser,
+function(req, res) {
+  res.render('index')
 });
 
-app.get('/links', 
+app.get('/links', util.checkUser,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links', util.checkUser,
 function(req, res) {
   var uri = req.body.url;
 
@@ -78,6 +85,26 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.post('/login', function(request, response) {
+  var username = request.body.username;
+  var password = request.body.password;
+
+  if(username == 'Phillip' && password == 'Phillip'){
+    request.session.regenerate(function(){
+      request.session.user = username;
+      response.redirect('/');
+    });
+  }
+  else {
+    response.redirect('login');
+  }
+});
+
+app.get('/logout', function(request, response){
+  request.session.destroy(function(){
+    response.redirect('/');
+  });
+});
 
 
 /************************************************************/
