@@ -64,14 +64,12 @@ describe('', function() {
     var requestWithSession = request.defaults({jar: true});
 
     beforeEach(function(done){      // create a user that we can then log-in with
-      console.log('=====================trying to save user======');
       //console.log(JSON.stringify(done));
 
       new User({
           'username': 'Phillip',
           'password': 'Phillip'
       }).save().then(function(){
-        console.log('=======================');
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
@@ -183,7 +181,6 @@ describe('', function() {
 
         requestWithSession(options, function(error, res, body) {
           var code = res.body.code;
-          console.log('======================code: ', code);
           expect(code).to.equal(link.get('code'));
           done();
         });
@@ -247,7 +244,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function(){
+  describe('Account Creation:', function(){
 
     it('Signup creates a user record', function(done) {
       var options = {
@@ -295,7 +292,7 @@ describe('', function() {
 
   }); // 'Account Creation'
 
-  xdescribe('Account Login:', function(){
+  describe('Account Login:', function(){
 
     var requestWithSession = request.defaults({jar: true});
 
@@ -342,7 +339,5 @@ describe('', function() {
 
   }); // 'Account Login'
 
-
-  console.log('============================got here======================')
 
 });

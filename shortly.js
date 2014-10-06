@@ -25,7 +25,7 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(session({secret: 'nyancat'}));
 
-app.get('/', util.checkUser,
+app.get('/', util.checkSession,
 function(req, res) {
   res.render('index')
 });
@@ -35,19 +35,19 @@ function(req, res) {
   res.render('login');
 })
 
-app.get('/create', util.checkUser,
+app.get('/create', util.checkSession,
 function(req, res) {
   res.render('index')
 });
 
-app.get('/links', util.checkUser,
+app.get('/links', util.checkSession,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', util.checkUser,
+app.post('/links', util.checkSession,
 function(req, res) {
   var uri = req.body.url;
 
@@ -88,16 +88,16 @@ function(req, res) {
 app.post('/login', function(request, response) {
   var username = request.body.username;
   var password = request.body.password;
-
-  if(username == 'Phillip' && password == 'Phillip'){
+  //check the username
+  util.checkUsernameAndPassword(username, password, function(){
     request.session.regenerate(function(){
       request.session.user = username;
       response.redirect('/');
     });
-  }
-  else {
-    response.redirect('login');
-  }
+  }, function(){
+    response.redirect('/login');
+  });
+
 });
 
 app.get('/logout', function(request, response){
@@ -106,6 +106,28 @@ app.get('/logout', function(request, response){
   });
 });
 
+app.get('/signup', function(request, response){
+  response.render('signup')
+});
+
+app.post('/signup', function(request, response) {
+  var username = request.body.username;
+  var password = request.body.password;
+
+  //checks the user if it exists already
+  util.checkUsername(username, function() {
+    new User({
+      'username': username,
+      'password': password
+    }).save();
+    request.session.regenerate(function(){
+      request.session.user = username;
+      response.redirect('/');
+    });
+  }, function() {
+    response.redirect('/signup');
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
