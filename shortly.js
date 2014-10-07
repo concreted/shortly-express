@@ -13,9 +13,40 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+
+// =========================== Github authentication ===============================
+var passport = require('passport');
+var GitHubStrategy = require('passport-github').Strategy;
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+passport.use(new GitHubStrategy({
+    clientID: '5e96d0407ffe910f6999',
+    clientSecret: 'e23206f4a583c38ed481cb72a1f2f4c2a6565b6c',
+    //callbackURL: "http://127.0.0.1:4568/auth/github/callback"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    // process.nextTick required here for synchronous call - otherwise redirect happens
+    // before calling done(), which causes login to fail
+    process.nextTick(function () {
+      new User({
+        'githubId': profile.id
+      }).save();
+      return done(null, profile);
+    });
+  }
+));
+
+// ==============================================================================
+
+// ============================= Middleware setup ===============================
 var app = express();
-
-
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -23,23 +54,29 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({secret: 'nyancat', cookie: { path: '/', httpOnly: true, secure: false, maxAge: 36000000 }}));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(express.static(__dirname + '/public'));
 
-app.use(session({secret: 'nyancat', cookie: { path: '/', httpOnly: true, secure: false, maxAge: 36000000 }}));
+// ==============================================================================
 
+// ============================= Routes ========================================
 app.get('/', util.checkSession,
 function(req, res) {
-  res.render('index')
+  res.render('index');
 });
 
-app.get('/login',
-function(req, res) {
+app.get('/login', function(req, res) {
   res.render('login');
-})
+});
+
+app.get('/login/github', passport.authenticate('github'));
 
 app.get('/create', util.checkSession,
 function(req, res) {
-  res.render('index')
+  res.render('index');
 });
 
 app.get('/links', util.checkSession,
@@ -132,6 +169,12 @@ app.post('/signup', function(request, response) {
   });
 });
 
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('/');
+  });
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
