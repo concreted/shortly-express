@@ -7,6 +7,8 @@ var User = require('../app/models/user');
 var Links = require('../app/collections/links');
 var Link = require('../app/models/link');
 
+var bcrypt = require('bcrypt-nodejs');
+
 /************************************************************/
 // Mocha doesn't have a way to designate pending before blocks.
 // Mimic the behavior of xit and xdescribe with xbeforeEach.
@@ -65,10 +67,10 @@ describe('', function() {
 
     beforeEach(function(done){      // create a user that we can then log-in with
       //console.log(JSON.stringify(done));
-
+      var password = bcrypt.hashSync('Phillip');
       new User({
           'username': 'Phillip',
-          'password': 'Phillip'
+          'password': password
       }).save().then(function(){
         var options = {
           'method': 'POST',
@@ -295,11 +297,11 @@ describe('', function() {
   describe('Account Login:', function(){
 
     var requestWithSession = request.defaults({jar: true});
-
+      var password = bcrypt.hashSync('Phillip')
     beforeEach(function(done){
       new User({
           'username': 'Phillip',
-          'password': 'Phillip'
+          'password': password
       }).save().then(function(){
         done()
       });

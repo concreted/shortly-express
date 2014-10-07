@@ -3,6 +3,7 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -14,6 +15,7 @@ var Click = require('./app/models/click');
 
 var app = express();
 
+
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
@@ -23,7 +25,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-app.use(session({secret: 'nyancat'}));
+app.use(session({secret: 'nyancat', cookie: { path: '/', httpOnly: true, secure: false, maxAge: 36000000 }}));
 
 app.get('/', util.checkSession,
 function(req, res) {
@@ -92,6 +94,7 @@ app.post('/login', function(request, response) {
   util.checkUsernameAndPassword(username, password, function(){
     request.session.regenerate(function(){
       request.session.user = username;
+      request.session.save();
       response.redirect('/');
     });
   }, function(){
@@ -112,7 +115,7 @@ app.get('/signup', function(request, response){
 
 app.post('/signup', function(request, response) {
   var username = request.body.username;
-  var password = request.body.password;
+  var password = bcrypt.hashSync(request.body.password);
 
   //checks the user if it exists already
   util.checkUsername(username, function() {
